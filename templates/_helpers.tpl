@@ -107,12 +107,16 @@ Create MongoDB connection URI
 */}}
 {{- define "nightscout.mongodb.uri" -}}
 {{- if .Values.mongodb.enabled -}}
-  {{- $username := "nightscout" -}}
-  {{- $password := include "nightscout.mongodb.password" . -}}
   {{- $database := .Values.mongodb.auth.database | default "nightscout" -}}
   {{- $host := printf "%s-mongodb" (include "nightscout.fullname" .) -}}
   {{- $port := .Values.mongodb.service.ports.mongodb | default 27017 -}}
-  {{- printf "mongodb://%s:%s@%s:%v/%s" $username $password $host $port $database -}}
+  {{- if .Values.mongodb.auth.enabled -}}
+    {{- $username := "nightscout" -}}
+    {{- $password := include "nightscout.mongodb.password" . -}}
+    {{- printf "mongodb://%s:%s@%s:%v/%s" $username $password $host $port $database -}}
+  {{- else -}}
+    {{- printf "mongodb://%s:%v/%s" $host $port $database -}}
+  {{- end -}}
 {{- else -}}
   {{- .Values.nightscout.mongodbUri -}}
 {{- end -}}
