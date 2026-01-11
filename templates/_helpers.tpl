@@ -101,3 +101,41 @@ Return the secret key for API Secret
 {{- "api-secret" }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create MongoDB connection URI
+*/}}
+{{- define "nightscout.mongodb.uri" -}}
+{{- if .Values.mongodb.enabled -}}
+  {{- $username := "nightscout" -}}
+  {{- $password := include "nightscout.mongodb.password" . -}}
+  {{- $database := .Values.mongodb.auth.database | default "nightscout" -}}
+  {{- $host := printf "%s-mongodb" (include "nightscout.fullname" .) -}}
+  {{- $port := .Values.mongodb.service.ports.mongodb | default 27017 -}}
+  {{- printf "mongodb://%s:%s@%s:%v/%s" $username $password $host $port $database -}}
+{{- else -}}
+  {{- .Values.nightscout.mongodbUri -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get or generate MongoDB password
+*/}}
+{{- define "nightscout.mongodb.password" -}}
+{{- if .Values.mongodb.auth.password -}}
+  {{- .Values.mongodb.auth.password -}}
+{{- else -}}
+  {{- randAlphaNum 20 -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get or generate Nightscout API secret
+*/}}
+{{- define "nightscout.apiSecret" -}}
+{{- if .Values.nightscout.apiSecret -}}
+  {{- .Values.nightscout.apiSecret -}}
+{{- else -}}
+  {{- randAlphaNum 24 -}}
+{{- end -}}
+{{- end -}}
