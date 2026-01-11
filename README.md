@@ -6,24 +6,7 @@ A Helm chart for Nightscout - Web-based CGM (Continuous Glucose Monitor) to visu
 
 ## Introduction
 
-This Helm chart deploys [Nightscout](https://github.com/nightscout/cgm-remote-monitor), an open-source web application for visualizing and monitoring Continuous Glucose Monitor (CGM) data. Nightscout enables people with diabetes and their caregivers to remotely view glucose data in real-time.
-
-## Features
-
-- 🔒 **Secure by Default** - Security contexts, optional NetworkPolicy, and secret management
-- 📊 **Comprehensive Configuration** - All Nightscout environment variables exposed
-- 🚀 **Production Ready** - HPA, PDB, probes, and resource limits
-- 🔌 **Plugin Support** - Full support for all Nightscout plugins
-- 🔗 **Bridge Support** - Dexcom Share and MiniMed CareLink integration
-- 📈 **Observable** - Health checks and monitoring endpoints
-- 🛡️ **High Availability** - Horizontal scaling and disruption budgets
-
-## Prerequisites
-
-- Kubernetes 1.19+
-- Helm 3.8+
-- MongoDB instance (external or via subchart)
-- PV provisioner support in the underlying infrastructure (optional)
+A Helm chart for [Nightscout](https://nightscout.github.io/) - Web-based CGM (Continuous Glucose Monitor) to visualize and monitor glucose data in real-time from CGM devices. This helm chart is an inital pre-cursor to creating a SaaS solution ontop of nightscout, it can be used with a GitOps or event driven system to provision Nightscout instances on Kubernetes.
 
 ## Requirements
 
