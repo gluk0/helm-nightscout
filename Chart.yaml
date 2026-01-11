@@ -2,7 +2,7 @@ apiVersion: v2
 name: nightscout
 description: A Helm chart for Nightscout - Web-based CGM (Continuous Glucose Monitor) to visualize and monitor glucose data in real-time
 type: application
-version: 1.0.0
+version: 1.1.0
 appVersion: "15.0.3"
 keywords:
   - nightscout
@@ -22,6 +22,11 @@ sources:
 maintainers:
   - name: Nightscout Community
     url: https://github.com/nightscout/cgm-remote-monitor/graphs/contributors
+dependencies:
+  - name: mongodb
+    version: "^15.0.0"
+    repository: https://charts.bitnami.com/bitnami
+    condition: mongodb.enabled
 annotations:
   category: Healthcare
   licenses: AGPL-3.0
@@ -35,6 +40,8 @@ annotations:
       description: NetworkPolicy and PodDisruptionBudget
     - kind: added
       description: Startup probe for better initialization
+    - kind: added
+      description: Integrated MongoDB with auto-generated secrets
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/prerelease: "false"
   artifacthub.io/recommendations: |

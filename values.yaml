@@ -111,12 +111,15 @@ affinity: {}
 
 # Nightscout-specific configuration
 nightscout:
-  # MongoDB connection string (required)
-  # Example: mongodb://user:password@mongodb:27017/nightscout
+  # MongoDB connection string
+  # Leave empty to use the integrated MongoDB subchart (when mongodb.enabled=true)
+  # Provide a custom URI to use an external MongoDB instance
+  # Example: mongodb://user:password@mongodb.example.com:27017/nightscout
   mongodbUri: ""
 
-  # API secret for securing the Nightscout instance (required)
-  # This should be at least 12 characters long
+  # API secret for securing the Nightscout instance
+  # If empty, a random 24-character secret will be auto-generated
+  # IMPORTANT: Once set, save this value as it won't be visible after deployment
   apiSecret: ""
 
   # Use existing secret for MongoDB URI and API Secret
@@ -415,3 +418,44 @@ readinessProbe:
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 3
+
+# MongoDB configuration (subchart)
+# When enabled, MongoDB will be deployed as part of this chart
+# and automatically configured with Nightscout
+mongodb:
+  enabled: true
+
+  auth:
+    # Enable authentication
+    enabled: true
+    # Root user password (auto-generated if not specified)
+    # rootPassword: ""
+    # Nightscout database and user
+    database: nightscout
+    username: nightscout
+    # Password for nightscout user (auto-generated if not specified)
+    # password: ""
+
+  # Persistence configuration
+  persistence:
+    enabled: true
+    size: 8Gi
+    # storageClass: ""
+
+  # Resource limits for MongoDB
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    ports:
+      mongodb: 27017
+
+  # Architecture (standalone or replicaset)
+  architecture: standalone
