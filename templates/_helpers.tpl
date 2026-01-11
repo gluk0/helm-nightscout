@@ -129,7 +129,13 @@ Get or generate MongoDB password
 {{- if .Values.mongodb.auth.password -}}
   {{- .Values.mongodb.auth.password -}}
 {{- else -}}
-  {{- randAlphaNum 20 -}}
+  {{- $secretName := printf "%s-mongodb" (include "nightscout.fullname" .) -}}
+  {{- $secret := lookup "v1" "Secret" .Release.Namespace $secretName -}}
+  {{- if $secret -}}
+    {{- index $secret.data "mongodb-passwords" | b64dec -}}
+  {{- else -}}
+    {{- randAlphaNum 20 -}}
+  {{- end -}}
 {{- end -}}
 {{- end -}}
 
