@@ -36,8 +36,7 @@
         },
         "apiSecret": {
           "type": "string",
-          "minLength": 12,
-          "description": "API secret for Nightscout (must be at least 12 characters)"
+          "description": "API secret for Nightscout (must be at least 12 characters if provided, leave empty for auto-generation)"
         },
         "existingSecret": {
           "type": "string",
