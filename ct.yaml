@@ -1,0 +1,37 @@
+# Chart testing configuration for Helm charts
+# Documentation: https://github.com/helm/chart-testing
+---
+# Version of the ct configuration
+remote: origin
+
+# List of directories to exclude from testing
+excluded-charts: []
+
+# Helm version to use for testing
+target-branch: main
+
+# Path to the Helm binary
+helm-extra-args: --timeout 600s
+
+# Additional directories to chart directories
+chart-dirs:
+  - .
+
+# Additional repositories to add
+chart-repos:
+  - bitnami=https://charts.bitnami.com/bitnami
+
+# Additional set files to use for linting
+chart-yaml-schema: /etc/ct/chart_schema.yaml
+lint-conf: /etc/ct/lintconf.yaml
+
+# Check for version bumps
+check-version-increment: true
+
+# Process chart dependencies
+validate-maintainers: true
+
+# Additional helm lint flags
+helm-lint-extra-args: ""
+
+# Additional yamllint config

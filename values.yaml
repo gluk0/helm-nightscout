@@ -1,0 +1,417 @@
+# Default values for nightscout.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: nightscout/cgm-remote-monitor
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 1337
+  targetPort: 1337
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: nightscout.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: nightscout-tls
+  #    hosts:
+  #      - nightscout.example.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget for high availability
+podDisruptionBudget:
+  enabled: false
+  # minAvailable: 1
+  maxUnavailable: 1
+
+# Network Policy for restricting traffic
+networkPolicy:
+  enabled: false
+  ingress:
+    enabled: true
+    # Allow ingress from specific namespaces (e.g., ingress-nginx)
+    namespaceSelector: {}
+    # matchLabels:
+    #   name: ingress-nginx
+    podSelector: {}
+    extraRules: []
+  egress:
+    enabled: true
+    # Allow external connections (required for Dexcom/MiniMed bridges)
+    allowExternal: true
+    # MongoDB connection settings
+    mongodbNamespaceSelector: {}
+    mongodbPodSelector: {}
+    extraRules: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Nightscout-specific configuration
+nightscout:
+  # MongoDB connection string (required)
+  # Example: mongodb://user:password@mongodb:27017/nightscout
+  mongodbUri: ""
+
+  # API secret for securing the Nightscout instance (required)
+  # This should be at least 12 characters long
+  apiSecret: ""
+
+  # Use existing secret for MongoDB URI and API Secret
+  # If set, mongodbUri and apiSecret values above will be ignored
+  existingSecret: ""
+  # Keys in the existing secret (if different from defaults)
+  existingSecretKeys:
+    mongodbUri: mongodb-uri
+    apiSecret: api-secret
+
+  # Base URL for the Nightscout instance
+  # Used for building links to your site's API (e.g., Pushover callbacks)
+  baseUrl: ""
+
+  # MongoDB collection names
+  collections:
+    # The collection used to store entries (CGM data)
+    entries: "entries"
+    # The collection used to store treatments entered in the Care Portal
+    treatments: "treatments"
+    # The collection used to store device status information
+    devicestatus: "devicestatus"
+    # The collection used to store profiles
+    profile: "profile"
+    # The collection used to store food database
+    food: "food"
+    # The collection used to store activity data
+    activity: "activity"
+
+  # Enable or disable specific features (plugins)
+  # Space-delimited list in ENABLE environment variable
+  enable:
+    - careportal
+    - boluscalc
+    - food
+    - rawbg
+    - iob
+    - cob
+    - bwp
+    - cage
+    - sage
+    - iage
+    - bage
+    - basal
+    - ar2
+    - rawbg
+    - pushover
+    - treatmentnotify
+    - bridge
+    - mmconnect
+    - pump
+    - openaps
+    - loop
+    - override
+    - xdripjs
+    - alexa
+    - googlehome
+    - speech
+
+  # Disable default features
+  # By default, 'delta', 'direction', 'upbat', 'timeago', 'devicestatus', 'errorcodes', 'ar2', 'simplealarms', 'profile' are enabled
+  disable: []
+
+  # Authentication and Authorization
+  auth:
+    # Default roles for unauthenticated users: readable, denied, status-only
+    # When 'readable', anyone can view Nightscout without a token
+    # 'denied' requires a token for every visit
+    # 'status-only' enables api-secret based login
+    defaultRoles: "readable"
+
+    # Deprecated: Use auth.defaultRoles instead
+    # If set to 'off', the 'careportal' role will be added to AUTH_DEFAULT_ROLES
+    treatmentsAuth: "on"
+
+  # Alarm settings - affect all delivery methods (browser, Pushover, IFTTT, etc.)
+  alarms:
+    # Alarm types: 'simple', 'predict', or both (space-separated)
+    # 'simple' compares current BG to thresholds
+    # 'predict' uses formula to forecast where BG is going
+    types: "simple"
+
+    # BG thresholds (in units specified by 'units' setting)
+    urgent:
+      high: 260  # BG_HIGH - Urgent high threshold
+      low: 55    # BG_LOW - Urgent low threshold
+    target:
+      top: 180   # BG_TARGET_TOP - High threshold for target range
+      bottom: 80 # BG_TARGET_BOTTOM - Low threshold for target range
+
+    # Enable/disable specific alarms ('on' or 'off')
+    urgentHigh:
+      enabled: "on"
+      # Snooze time options in minutes (space-separated, first used for pushover)
+      snoozeMins: "30 60 90 120"
+
+    high:
+      enabled: "on"
+      snoozeMins: "30 60 90 120"
+
+    low:
+      enabled: "on"
+      snoozeMins: "15 30 45 60"
+
+    urgentLow:
+      enabled: "on"
+      snoozeMins: "15 30 45"
+
+    # Generic urgent and warning snooze times (not tagged as high/low)
+    urgent:
+      snoozeMins: "30 60 90 120"
+    warn:
+      snoozeMins: "30 60 90 120"
+
+    # Time-based alarms (stale data)
+    timeago:
+      warn:
+        enabled: "on"
+        mins: 15
+      urgent:
+        enabled: "on"
+        mins: 30
+
+  # Display and UI settings
+  display:
+    # Time format: 12 or 24
+    timeFormat: 24
+
+    # Units: mg/dl or mmol (or mmol/L)
+    units: "mg/dl"
+
+    # Language code (en, de, es, fr, etc.)
+    language: "en"
+
+    # Timezone (e.g., America/New_York, Europe/London)
+    timezone: ""
+
+    # Custom title for the main view
+    customTitle: "Nightscout"
+
+    # Theme: default, colors, or colorblindfriendly
+    theme: "default"
+
+    # Night mode: on or off
+    nightMode: "off"
+
+    # Show raw BG: always, never, or noise
+    showRawBg: "never"
+
+    # Edit mode in main view: on or off
+    editMode: "on"
+
+    # Scale for Y axis: log, linear, or log-dynamic
+    scaleY: "log"
+
+    # Day start time (0.0 - 24.0) for day/night features
+    dayStart: "7.0"
+
+    # Day end time (0.0 - 24.0) for day/night features
+    dayEnd: "21.0"
+
+  # Plugin-specific settings
+  plugins:
+    # Which enabled plugins should be visible/active by default
+    # Space-delimited list, should be subset of 'enable'
+    showPlugins: ""
+
+    # Plugin forecasts to show by default (e.g., "ar2 openaps")
+    showForecast: "ar2"
+
+    # Bolus rendering - U value over which boluses are rendered on chart
+    bolusRenderOver: 1
+
+    # Uploader battery settings
+    upbat:
+      enableAlerts: false
+      warn: 30
+      urgent: 20
+
+    # Timeago settings
+    timeago:
+      enableAlerts: false
+
+    # Device status - send all device statuses to client
+    devicestatus:
+      advanced: false
+
+    # Error codes configuration
+    errorcodes:
+      info: "1 2 3 4 5 6 7 8"
+      warn: "off"
+      urgent: "9 10"
+
+  # Bridge settings for Dexcom Share
+  bridge:
+    enabled: false
+    userName: ""
+    password: ""
+    # Server: US or EU
+    server: "US"
+
+  # MiniMed CareLink settings
+  mmconnect:
+    enabled: false
+    userName: ""
+    password: ""
+    # Server: US or EU
+    server: "US"
+
+  # Server security settings
+  security:
+    # Redirect http to https: true or false
+    # Set to true if you want to allow http traffic (not recommended)
+    insecureUseHttp: false
+
+    # HTTP Strict Transport Security (HSTS)
+    hsts:
+      enabled: true
+      includeSubdomains: false
+      preload: false
+
+    # Content Security Policy
+    csp:
+      enabled: false
+      reportOnly: false
+
+  # Core server settings
+  server:
+    # Heartbeat interval in seconds (database checks)
+    heartbeat: 60
+
+    # SSL configuration (usually handled by Kubernetes Ingress)
+    ssl:
+      key: ""
+      cert: ""
+      ca: ""
+
+    # Hostname to listen on (null for any, :: for IPv6)
+    hostname: ""
+
+  # Additional environment variables
+  # Use this for any environment variables not covered above
+  extraEnv: []
+  # - name: CUSTOM_ENV_VAR
+  #   value: "custom-value"
+  # - name: SHOW_PLUGINS
+  #   value: "careportal boluscalc food"
+
+# Persistence for temporary files (optional)
+persistence:
+  enabled: false
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  mountPath: /tmp/public
+
+# MongoDB subchart (optional - can be enabled for testing)
+mongodb:
+  enabled: false
+  auth:
+    enabled: true
+    rootPassword: ""
+    database: nightscout
+    username: nightscout
+    password: ""
+  persistence:
+    enabled: true
+    size: 8Gi
+
+# Probes configuration
+startupProbe:
+  enabled: true
+  probe:
+    httpGet:
+      path: /api/v1/status
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+
+livenessProbe:
+  httpGet:
+    path: /api/v1/status
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/v1/status
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3

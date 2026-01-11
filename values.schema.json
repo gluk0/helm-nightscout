@@ -1,0 +1,461 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Nightscout Helm Chart Values",
+  "type": "object",
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of Nightscout replicas"
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "nightscout": {
+      "type": "object",
+      "properties": {
+        "mongodbUri": {
+          "type": "string",
+          "description": "MongoDB connection string (required if not using existingSecret)"
+        },
+        "apiSecret": {
+          "type": "string",
+          "minLength": 12,
+          "description": "API secret for Nightscout (must be at least 12 characters)"
+        },
+        "existingSecret": {
+          "type": "string",
+          "description": "Name of existing secret containing mongodbUri and apiSecret"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Base URL for the Nightscout instance"
+        },
+        "collections": {
+          "type": "object",
+          "properties": {
+            "entries": {
+              "type": "string"
+            },
+            "treatments": {
+              "type": "string"
+            },
+            "devicestatus": {
+              "type": "string"
+            },
+            "profile": {
+              "type": "string"
+            },
+            "food": {
+              "type": "string"
+            },
+            "activity": {
+              "type": "string"
+            }
+          }
+        },
+        "enable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of plugins to enable"
+        },
+        "disable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of default plugins to disable"
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "defaultRoles": {
+              "type": "string",
+              "enum": [
+                "readable",
+                "denied",
+                "status-only"
+              ]
+            },
+            "treatmentsAuth": {
+              "type": "string",
+              "enum": [
+                "on",
+                "off"
+              ]
+            }
+          }
+        },
+        "alarms": {
+          "type": "object",
+          "properties": {
+            "types": {
+              "type": "string",
+              "description": "Alarm types: simple, predict, or both space-separated"
+            },
+            "urgent": {
+              "type": "object",
+              "properties": {
+                "high": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "low": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "target": {
+              "type": "object",
+              "properties": {
+                "top": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "bottom": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "display": {
+          "type": "object",
+          "properties": {
+            "timeFormat": {
+              "type": "integer",
+              "enum": [
+                12,
+                24
+              ]
+            },
+            "units": {
+              "type": "string",
+              "enum": [
+                "mg/dl",
+                "mmol",
+                "mmol/L"
+              ]
+            },
+            "language": {
+              "type": "string",
+              "pattern": "^[a-z]{2}(_[a-z]{2})?$"
+            },
+            "customTitle": {
+              "type": "string"
+            },
+            "theme": {
+              "type": "string",
+              "enum": [
+                "default",
+                "colors",
+                "colorblindfriendly"
+              ]
+            },
+            "nightMode": {
+              "type": "string",
+              "enum": [
+                "on",
+                "off"
+              ]
+            },
+            "showRawBg": {
+              "type": "string",
+              "enum": [
+                "always",
+                "never",
+                "noise"
+              ]
+            },
+            "editMode": {
+              "type": "string",
+              "enum": [
+                "on",
+                "off"
+              ]
+            },
+            "scaleY": {
+              "type": "string",
+              "enum": [
+                "log",
+                "linear",
+                "log-dynamic"
+              ]
+            }
+          }
+        },
+        "bridge": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "userName": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "server": {
+              "type": "string",
+              "enum": [
+                "US",
+                "EU"
+              ]
+            }
+          }
+        },
+        "mmconnect": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "userName": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "server": {
+              "type": "string",
+              "enum": [
+                "US",
+                "EU"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ]
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "targetPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "className": {
+          "type": "string"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host": {
+                "type": "string"
+              },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "pathType": {
+                      "type": "string",
+                      "enum": [
+                        "Prefix",
+                        "Exact",
+                        "ImplementationSpecific"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "pathType"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "host",
+              "paths"
+            ]
+          }
+        },
+        "tls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "secretName": {
+                "type": "string"
+              },
+              "hosts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string"
+            },
+            "memory": {
+              "type": "string"
+            }
+          }
+        },
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string"
+            },
+            "memory": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "autoscaling": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minReplicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "targetCPUUtilizationPercentage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "targetMemoryUtilizationPercentage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    },
+    "podDisruptionBudget": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minAvailable": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+%$"
+            }
+          ]
+        },
+        "maxUnavailable": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+%$"
+            }
+          ]
+        }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "ingress": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "egress": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "allowExternal": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": []
+}

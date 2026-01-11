@@ -1,0 +1,139 @@
+******************************************************************************************
+***   Nightscout CGM Remote Monitor has been successfully deployed!                 ***
+******************************************************************************************
+
+Thank you for installing {{ .Chart.Name }}.
+Your release is named {{ .Release.Name }}.
+
+{{- if or (not .Values.nightscout.mongodbUri) (not .Values.nightscout.apiSecret) }}
+{{- if not .Values.nightscout.existingSecret }}
+
+⚠️  IMPORTANT: CONFIGURATION REQUIRED  ⚠️
+
+{{- if not .Values.nightscout.mongodbUri }}
+❌ MongoDB URI is not configured!
+   Please set nightscout.mongodbUri in your values file.
+{{- end }}
+
+{{- if not .Values.nightscout.apiSecret }}
+❌ API Secret is not configured!
+   Please set nightscout.apiSecret in your values file.
+   The API secret must be at least 12 characters long.
+{{- end }}
+
+Your Nightscout deployment will not function correctly until these are configured.
+Upgrade the release with the required values:
+
+  helm upgrade {{ .Release.Name }} <chart> -f your-values.yaml
+
+{{- end }}
+{{- end }}
+
+================================================================================
+  ACCESS YOUR NIGHTSCOUT INSTANCE
+================================================================================
+
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  🌐 Nightscout URL: http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "nightscout.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "🌐 Nightscout URL: http://$NODE_IP:$NODE_PORT"
+{{- else if contains "LoadBalancer" .Values.service.type }}
+  ℹ️  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+
+  Watch the status:
+  kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "nightscout.fullname" . }}
+
+  Once available, get the URL:
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "nightscout.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo "🌐 Nightscout URL: http://$SERVICE_IP:{{ .Values.service.port }}"
+{{- else if contains "ClusterIP" .Values.service.type }}
+  To access Nightscout locally, run:
+
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "nightscout.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:{{ .Values.service.targetPort }}
+
+  🌐 Then visit: http://127.0.0.1:8080
+{{- end }}
+
+================================================================================
+  CURRENT CONFIGURATION
+================================================================================
+
+Display Settings:
+  • Theme: {{ .Values.nightscout.display.theme }}
+  • Units: {{ .Values.nightscout.display.units }}
+  • Time Format: {{ .Values.nightscout.display.timeFormat }}
+  • Language: {{ .Values.nightscout.display.language }}
+  • Custom Title: {{ .Values.nightscout.display.customTitle }}
+
+Alarm Thresholds ({{ .Values.nightscout.display.units }}):
+  • Urgent High: {{ .Values.nightscout.alarms.urgent.high }}
+  • Target High: {{ .Values.nightscout.alarms.target.top }}
+  • Target Low: {{ .Values.nightscout.alarms.target.bottom }}
+  • Urgent Low: {{ .Values.nightscout.alarms.urgent.low }}
+
+Enabled Plugins:
+  {{- if .Values.nightscout.enable }}
+  {{ join ", " .Values.nightscout.enable }}
+  {{- else }}
+  (none specified - using defaults)
+  {{- end }}
+
+Authentication:
+  • Default Roles: {{ .Values.nightscout.auth.defaultRoles }}
+
+================================================================================
+  VERIFICATION STEPS
+================================================================================
+
+1. Check pod status:
+   kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}"
+
+2. View pod logs:
+   kubectl logs --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}" --tail=50 -f
+
+3. Check service status:
+   kubectl get svc --namespace {{ .Release.Namespace }} {{ include "nightscout.fullname" . }}
+
+4. Verify Nightscout API:
+   (After accessing the URL above, append /api/v1/status to check API health)
+
+================================================================================
+  USEFUL RESOURCES
+================================================================================
+
+📖 Nightscout Documentation: https://nightscout.github.io/
+💬 Discord Community: https://discord.gg/rTKhrqz
+🐛 Report Issues: https://github.com/nightscout/cgm-remote-monitor/issues
+🌟 GitHub Repository: https://github.com/nightscout/cgm-remote-monitor
+
+================================================================================
+  NEXT STEPS
+================================================================================
+
+{{- if .Values.nightscout.bridge.enabled }}
+✅ Dexcom Share Bridge is enabled
+{{- end }}
+{{- if .Values.nightscout.mmconnect.enabled }}
+✅ MiniMed CareLink is enabled
+{{- end }}
+{{- if not .Values.ingress.enabled }}
+⚠️  Consider enabling Ingress for external access with TLS/SSL support
+{{- end }}
+{{- if not .Values.autoscaling.enabled }}
+💡 Consider enabling HorizontalPodAutoscaler for automatic scaling
+{{- end }}
+{{- if not .Values.networkPolicy.enabled }}
+💡 Consider enabling NetworkPolicy for enhanced security
+{{- end }}
+{{- if not .Values.podDisruptionBudget.enabled }}
+💡 Consider enabling PodDisruptionBudget for high availability
+{{- end }}
+
+Enjoy using Nightscout! 🩸📊

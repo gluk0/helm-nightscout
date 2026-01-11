@@ -1,0 +1,46 @@
+apiVersion: v2
+name: nightscout
+description: A Helm chart for Nightscout - Web-based CGM (Continuous Glucose Monitor) to visualize and monitor glucose data in real-time
+type: application
+version: 1.0.0
+appVersion: "15.0.3"
+keywords:
+  - nightscout
+  - cgm
+  - diabetes
+  - glucose
+  - monitoring
+  - health
+  - blood-sugar
+  - dexcom
+  - medtronic
+  - careportal
+home: https://nightscout.github.io/
+icon: https://raw.githubusercontent.com/nightscout/cgm-remote-monitor/master/static/images/logo2.png
+sources:
+  - https://github.com/nightscout/cgm-remote-monitor
+maintainers:
+  - name: Nightscout Community
+    url: https://github.com/nightscout/cgm-remote-monitor/graphs/contributors
+annotations:
+  category: Healthcare
+  licenses: AGPL-3.0
+  # Artifact Hub specific annotations
+  artifacthub.io/changes: |
+    - kind: added
+      description: Comprehensive environment variable configuration
+    - kind: added
+      description: Support for existing secrets
+    - kind: added
+      description: NetworkPolicy and PodDisruptionBudget
+    - kind: added
+      description: Startup probe for better initialization
+  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/recommendations: |
+    - url: https://nightscout.github.io/
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://nightscout.github.io/
+    - name: Discord Community
+      url: https://discord.gg/rTKhrqz

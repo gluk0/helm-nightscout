@@ -1,0 +1,62 @@
+# Test values for CI/CD pipeline
+# This file is used for automated chart testing
+
+replicaCount: 1
+
+nightscout:
+  mongodbUri: "mongodb://testuser:testpass@mongodb:27017/nightscout-test"
+  apiSecret: "test-secret-min-12-chars-long"
+  baseUrl: "http://localhost:1337"
+
+  display:
+    customTitle: "Nightscout CI Test"
+    timezone: "UTC"
+    units: "mg/dl"
+    timeFormat: 24
+    language: "en"
+    theme: "default"
+
+  enable:
+    - careportal
+    - iob
+    - cob
+
+  alarms:
+    types: "simple"
+    urgent:
+      high: 260
+      low: 55
+    target:
+      top: 180
+      bottom: 80
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Don't enable ingress for testing
+ingress:
+  enabled: false
+
+# Don't enable autoscaling for testing
+autoscaling:
+  enabled: false
+
+# Enable basic security context
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000

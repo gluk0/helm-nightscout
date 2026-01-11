@@ -1,0 +1,38 @@
+name: Generate Documentation
+
+on:
+  pull_request:
+    paths:
+      - 'values.yaml'
+      - 'Chart.yaml'
+      - 'README.md.gotmpl'
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Run helm-docs
+        uses: docker://jnorwood/helm-docs:v1.13.1
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit documentation changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: update README.md from helm-docs"
+          git push

@@ -1,0 +1,72 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "nightscout.fullname" . }}
+  labels:
+    {{- include "nightscout.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "nightscout.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    {{- if .Values.networkPolicy.egress.enabled }}
+    - Egress
+    {{- end }}
+  ingress:
+    # Allow from ingress controllers
+    {{- if .Values.networkPolicy.ingress.enabled }}
+    - from:
+      {{- if .Values.networkPolicy.ingress.namespaceSelector }}
+      - namespaceSelector:
+          {{- toYaml .Values.networkPolicy.ingress.namespaceSelector | nindent 10 }}
+      {{- end }}
+      {{- if .Values.networkPolicy.ingress.podSelector }}
+      - podSelector:
+          {{- toYaml .Values.networkPolicy.ingress.podSelector | nindent 10 }}
+      {{- end }}
+      ports:
+      - protocol: TCP
+        port: {{ .Values.service.targetPort }}
+    {{- end }}
+    # Additional ingress rules
+    {{- with .Values.networkPolicy.ingress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- if .Values.networkPolicy.egress.enabled }}
+  egress:
+    # Allow DNS
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            name: kube-system
+      ports:
+      - protocol: UDP
+        port: 53
+    # Allow MongoDB access
+    - to:
+      {{- if .Values.networkPolicy.egress.mongodbNamespaceSelector }}
+      - namespaceSelector:
+          {{- toYaml .Values.networkPolicy.egress.mongodbNamespaceSelector | nindent 10 }}
+      {{- end }}
+      {{- if .Values.networkPolicy.egress.mongodbPodSelector }}
+      - podSelector:
+          {{- toYaml .Values.networkPolicy.egress.mongodbPodSelector | nindent 10 }}
+      {{- end }}
+      ports:
+      - protocol: TCP
+        port: 27017
+    # Allow external API calls (for bridges, etc.)
+    {{- if .Values.networkPolicy.egress.allowExternal }}
+    - to:
+      - namespaceSelector: {}
+    - to:
+      - podSelector: {}
+    {{- end }}
+    # Additional egress rules
+    {{- with .Values.networkPolicy.egress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+{{- end }}

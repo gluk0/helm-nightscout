@@ -1,0 +1,364 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nightscout.fullname" . }}
+  labels:
+    {{- include "nightscout.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "nightscout.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "nightscout.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nightscout.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: {{ include "nightscout.image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: PORT
+          value: {{ .Values.service.targetPort | quote }}
+        - name: MONGO_CONNECTION
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "nightscout.secretName" . }}
+              key: {{ include "nightscout.secretKeys.mongodbUri" . }}
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "nightscout.secretName" . }}
+              key: {{ include "nightscout.secretKeys.mongodbUri" . }}
+        - name: API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "nightscout.secretName" . }}
+              key: {{ include "nightscout.secretKeys.apiSecret" . }}
+        {{- if .Values.nightscout.baseUrl }}
+        - name: BASE_URL
+          value: {{ .Values.nightscout.baseUrl | quote }}
+        {{- end }}
+
+        # MongoDB Collections
+        {{- with .Values.nightscout.collections }}
+        {{- if .entries }}
+        - name: MONGODB_COLLECTION
+          value: {{ .entries | quote }}
+        {{- end }}
+        {{- if .treatments }}
+        - name: MONGO_TREATMENTS_COLLECTION
+          value: {{ .treatments | quote }}
+        {{- end }}
+        {{- if .devicestatus }}
+        - name: MONGO_DEVICESTATUS_COLLECTION
+          value: {{ .devicestatus | quote }}
+        {{- end }}
+        {{- if .profile }}
+        - name: MONGO_PROFILE_COLLECTION
+          value: {{ .profile | quote }}
+        {{- end }}
+        {{- if .food }}
+        - name: MONGO_FOOD_COLLECTION
+          value: {{ .food | quote }}
+        {{- end }}
+        {{- if .activity }}
+        - name: MONGO_ACTIVITY_COLLECTION
+          value: {{ .activity | quote }}
+        {{- end }}
+        {{- end }}
+
+        # Plugin Configuration
+        {{- if .Values.nightscout.enable }}
+        - name: ENABLE
+          value: {{ join " " .Values.nightscout.enable | quote }}
+        {{- end }}
+        {{- if .Values.nightscout.disable }}
+        - name: DISABLE
+          value: {{ join " " .Values.nightscout.disable | quote }}
+        {{- end }}
+        {{- if .Values.nightscout.plugins.showPlugins }}
+        - name: SHOW_PLUGINS
+          value: {{ .Values.nightscout.plugins.showPlugins | quote }}
+        {{- end }}
+        {{- if .Values.nightscout.plugins.showForecast }}
+        - name: SHOW_FORECAST
+          value: {{ .Values.nightscout.plugins.showForecast | quote }}
+        {{- end }}
+
+        # Authentication
+        {{- with .Values.nightscout.auth }}
+        {{- if .defaultRoles }}
+        - name: AUTH_DEFAULT_ROLES
+          value: {{ .defaultRoles | quote }}
+        {{- end }}
+        {{- if .treatmentsAuth }}
+        - name: TREATMENTS_AUTH
+          value: {{ .treatmentsAuth | quote }}
+        {{- end }}
+        {{- end }}
+
+        # Alarm Configuration
+        {{- with .Values.nightscout.alarms }}
+        {{- if .types }}
+        - name: ALARM_TYPES
+          value: {{ .types | quote }}
+        {{- end }}
+        {{- if .urgent }}
+        - name: BG_HIGH
+          value: {{ .urgent.high | quote }}
+        - name: BG_LOW
+          value: {{ .urgent.low | quote }}
+        {{- end }}
+        {{- if .target }}
+        - name: BG_TARGET_TOP
+          value: {{ .target.top | quote }}
+        - name: BG_TARGET_BOTTOM
+          value: {{ .target.bottom | quote }}
+        {{- end }}
+        {{- if .urgentHigh }}
+        - name: ALARM_URGENT_HIGH
+          value: {{ .urgentHigh.enabled | quote }}
+        {{- if .urgentHigh.snoozeMins }}
+        - name: ALARM_URGENT_HIGH_MINS
+          value: {{ .urgentHigh.snoozeMins | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .high }}
+        - name: ALARM_HIGH
+          value: {{ .high.enabled | quote }}
+        {{- if .high.snoozeMins }}
+        - name: ALARM_HIGH_MINS
+          value: {{ .high.snoozeMins | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .low }}
+        - name: ALARM_LOW
+          value: {{ .low.enabled | quote }}
+        {{- if .low.snoozeMins }}
+        - name: ALARM_LOW_MINS
+          value: {{ .low.snoozeMins | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .urgentLow }}
+        - name: ALARM_URGENT_LOW
+          value: {{ .urgentLow.enabled | quote }}
+        {{- if .urgentLow.snoozeMins }}
+        - name: ALARM_URGENT_LOW_MINS
+          value: {{ .urgentLow.snoozeMins | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .timeago }}
+        {{- if .timeago.warn }}
+        - name: ALARM_TIMEAGO_WARN
+          value: {{ .timeago.warn.enabled | quote }}
+        - name: ALARM_TIMEAGO_WARN_MINS
+          value: {{ .timeago.warn.mins | quote }}
+        {{- end }}
+        {{- if .timeago.urgent }}
+        - name: ALARM_TIMEAGO_URGENT
+          value: {{ .timeago.urgent.enabled | quote }}
+        - name: ALARM_TIMEAGO_URGENT_MINS
+          value: {{ .timeago.urgent.mins | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+
+        # Display Settings
+        {{- with .Values.nightscout.display }}
+        - name: TIME_FORMAT
+          value: {{ .timeFormat | quote }}
+        - name: DISPLAY_UNITS
+          value: {{ .units | quote }}
+        - name: LANGUAGE
+          value: {{ .language | quote }}
+        {{- if .timezone }}
+        - name: TZ
+          value: {{ .timezone | quote }}
+        {{- end }}
+        - name: CUSTOM_TITLE
+          value: {{ .customTitle | quote }}
+        - name: THEME
+          value: {{ .theme | quote }}
+        {{- if .nightMode }}
+        - name: NIGHT_MODE
+          value: {{ .nightMode | quote }}
+        {{- end }}
+        {{- if .showRawBg }}
+        - name: SHOW_RAWBG
+          value: {{ .showRawBg | quote }}
+        {{- end }}
+        {{- if .editMode }}
+        - name: EDIT_MODE
+          value: {{ .editMode | quote }}
+        {{- end }}
+        {{- if .scaleY }}
+        - name: SCALE_Y
+          value: {{ .scaleY | quote }}
+        {{- end }}
+        {{- if .dayStart }}
+        - name: DAY_START
+          value: {{ .dayStart | quote }}
+        {{- end }}
+        {{- if .dayEnd }}
+        - name: DAY_END
+          value: {{ .dayEnd | quote }}
+        {{- end }}
+        {{- end }}
+
+        # Plugin-specific Settings
+        {{- with .Values.nightscout.plugins }}
+        {{- if .bolusRenderOver }}
+        - name: BOLUS_RENDER_OVER
+          value: {{ .bolusRenderOver | quote }}
+        {{- end }}
+        {{- if .upbat.enableAlerts }}
+        - name: UPBAT_ENABLE_ALERTS
+          value: {{ .upbat.enableAlerts | quote }}
+        - name: UPBAT_WARN
+          value: {{ .upbat.warn | quote }}
+        - name: UPBAT_URGENT
+          value: {{ .upbat.urgent | quote }}
+        {{- end }}
+        {{- if .timeago.enableAlerts }}
+        - name: TIMEAGO_ENABLE_ALERTS
+          value: {{ .timeago.enableAlerts | quote }}
+        {{- end }}
+        {{- if .devicestatus.advanced }}
+        - name: DEVICESTATUS_ADVANCED
+          value: {{ .devicestatus.advanced | quote }}
+        {{- end }}
+        {{- if .errorcodes }}
+        {{- if .errorcodes.info }}
+        - name: ERRORCODES_INFO
+          value: {{ .errorcodes.info | quote }}
+        {{- end }}
+        {{- if .errorcodes.warn }}
+        - name: ERRORCODES_WARN
+          value: {{ .errorcodes.warn | quote }}
+        {{- end }}
+        {{- if .errorcodes.urgent }}
+        - name: ERRORCODES_URGENT
+          value: {{ .errorcodes.urgent | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+
+        # Bridge Settings (Dexcom Share)
+        {{- if .Values.nightscout.bridge.enabled }}
+        - name: BRIDGE_USER_NAME
+          value: {{ .Values.nightscout.bridge.userName | quote }}
+        - name: BRIDGE_PASSWORD
+          value: {{ .Values.nightscout.bridge.password | quote }}
+        - name: BRIDGE_SERVER
+          value: {{ .Values.nightscout.bridge.server | quote }}
+        {{- end }}
+
+        # MiniMed CareLink Settings
+        {{- if .Values.nightscout.mmconnect.enabled }}
+        - name: MMCONNECT_USER_NAME
+          value: {{ .Values.nightscout.mmconnect.userName | quote }}
+        - name: MMCONNECT_PASSWORD
+          value: {{ .Values.nightscout.mmconnect.password | quote }}
+        - name: MMCONNECT_SERVER
+          value: {{ .Values.nightscout.mmconnect.server | quote }}
+        {{- end }}
+
+        # Security Settings
+        {{- with .Values.nightscout.security }}
+        {{- if .insecureUseHttp }}
+        - name: INSECURE_USE_HTTP
+          value: {{ .insecureUseHttp | quote }}
+        {{- end }}
+        {{- if .hsts }}
+        - name: SECURE_HSTS_HEADER
+          value: {{ .hsts.enabled | quote }}
+        {{- if .hsts.includeSubdomains }}
+        - name: SECURE_HSTS_HEADER_INCLUDESUBDOMAINS
+          value: {{ .hsts.includeSubdomains | quote }}
+        {{- end }}
+        {{- if .hsts.preload }}
+        - name: SECURE_HSTS_HEADER_PRELOAD
+          value: {{ .hsts.preload | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .csp }}
+        - name: SECURE_CSP
+          value: {{ .csp.enabled | quote }}
+        {{- if .csp.reportOnly }}
+        - name: SECURE_CSP_REPORT_ONLY
+          value: {{ .csp.reportOnly | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+
+        # Server Settings
+        {{- with .Values.nightscout.server }}
+        {{- if .heartbeat }}
+        - name: HEARTBEAT
+          value: {{ .heartbeat | quote }}
+        {{- end }}
+        {{- if .hostname }}
+        - name: HOSTNAME
+          value: {{ .hostname | quote }}
+        {{- end }}
+        {{- end }}
+
+        # Additional Environment Variables
+        {{- with .Values.nightscout.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.startupProbe.enabled }}
+        startupProbe:
+          {{- toYaml .Values.startupProbe.probe | nindent 12 }}
+        {{- end }}
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 12 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 12 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.persistence.enabled }}
+        volumeMounts:
+        - name: tmp
+          mountPath: {{ .Values.persistence.mountPath }}
+        {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+      - name: tmp
+        persistentVolumeClaim:
+          claimName: {{ include "nightscout.fullname" . }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
